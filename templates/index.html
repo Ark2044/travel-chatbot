@@ -493,6 +493,178 @@
                 transition: width 0.3s ease-out, opacity 0.3s ease-out;
             }
         }
+
+        /* Improved Mobile Touch Targets */
+        @media (max-width: 767px) {
+            /* Make touch targets at least 44px for accessibility */
+            button, 
+            a,
+            input[type="text"],
+            .p-2 {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Increase tap target size for record and toggle buttons */
+            #recordVoice,
+            #toggleVoice,
+            #submitAnswer {
+                min-height: 42px;
+                min-width: 42px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* Better tap highlighting with no flashing effect */
+            button:active,
+            a:active {
+                transform: scale(0.97);
+                transition: transform 0.1s ease-out;
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            /* Fix touch scrolling issues */
+            .custom-scrollbar {
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+                scrollbar-width: thin;
+            }
+            
+            /* Fix chat container height on small screens */
+            #chatMessages {
+                height: calc(100vh - 150px);
+            }
+            
+            /* Prevent text zoom issues with inputs */
+            input, 
+            textarea, 
+            select, 
+            button {
+                font-size: 16px !important; /* Prevents iOS zoom on input */
+            }
+            
+            /* Make sure buttons don't shift on tap */
+            button svg {
+                pointer-events: none;
+            }
+        }
+        
+        /* Fix iOS Safari position:fixed issues */
+        @supports (-webkit-touch-callout: none) {
+            .fixed {
+                position: fixed;
+                width: 100% !important;
+                height: 100% !important;
+                overflow: auto;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+            }
+            
+            /* Improve scrolling in modals on iOS */
+            .glass, 
+            #imagesPanel, 
+            #sidebar {
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Fix iOS notch issues */
+            .p-3.md\:p-4.glass.shadow-lg {
+                padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+            }
+            
+            #actionButtons {
+                bottom: calc(80px + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Fix button spacing in mobile view */
+        @media (max-width: 767px) {
+            /* Adjust button spacing and position for improved mobile UI */
+            .absolute.right-\[4\.2rem\].sm\:right-20 {
+                right: 3.9rem; /* Fine-tune position */
+            }
+            
+            .absolute.right-\[2\.2rem\].sm\:right-11 {
+                right: 2.1rem; /* Fine-tune position */
+            }
+            
+            /* Ensure buttons are large enough to tap easily */
+            #recordVoice,
+            #toggleVoice,
+            #submitAnswer {
+                min-width: 36px;
+                min-height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* Improve touch input spacing */
+            input#userInput {
+                font-size: 16px; /* Prevent iOS zoom */
+                padding-right: 90px; /* Make space for buttons */
+            }
+            
+            /* Ensure proper spacing in the input bar */
+            .p-3.md\:p-4.glass.shadow-lg {
+                padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+            }
+            
+            /* Improve chat containers */
+            #chatMessages > div {
+                max-width: 90%;
+            }
+        }
+
+        /* Additional input bar fixes for iOS and small screens */
+        @media (max-width: 480px) {
+            /* Adjustments for the smallest screens */
+            .pr-\[5\.5rem\] {
+                padding-right: 5.5rem;
+            }
+            
+            /* More space for the buttons while still showing enough of the input field */
+            input#userInput {
+                padding-right: 5.75rem !important;
+            }
+            
+            /* Make sure buttons are well-separated */
+            .absolute.right-\[4\.2rem\], 
+            .absolute.right-3\.9rem {
+                right: 3.75rem;
+            }
+            
+            .absolute.right-\[2\.2rem\], 
+            .absolute.right-2\.1rem {
+                right: 2rem;
+            }
+            
+            /* Make sure the buttons align perfectly with the vertical center */
+            .top-1\/2.-translate-y-1\/2 {
+                transform: translateY(-50%);
+            }
+        }
+        
+        /* Fix for Safari on iOS - ensure input doesn't get covered by keyboard */
+        @supports (-webkit-touch-callout: none) {
+            .p-3.md\:p-4.glass.shadow-lg {
+                position: sticky;
+                bottom: 0;
+                z-index: 20;
+            }
+            
+            #chatMessages {
+                padding-bottom: 1rem;
+            }
+            
+            /* Better focus state for the input field */
+            input#userInput:focus {
+                box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
+            }
+        }
     </style>
 </head>
 <body class="font-sans text-secondary-800 bg-gradient-to-br from-blue-50 to-sky-50 bg-fixed h-screen overflow-hidden">
@@ -663,47 +835,59 @@
                                     type="text" 
                                     id="userInput" 
                                     placeholder="Where would you like to travel?" 
-                                    class="w-full pl-5 pr-14 py-4 bg-white border border-secondary-200 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-300 placeholder-secondary-400 transition-all"
+                                    class="w-full pl-4 md:pl-5 pr-[5.5rem] sm:pr-28 py-3 md:py-4 bg-white border border-secondary-200 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-300 placeholder-secondary-400 transition-all text-sm md:text-base"
                                     aria-describedby="inputHelp"
                                 >
-                                <div class="absolute top-1/2 -translate-y-1/2 right-14">
+                                <div class="absolute top-1/2 -translate-y-1/2 right-[4.2rem] sm:right-20">
+                                    <button 
+                                        id="recordVoice" 
+                                        aria-label="Record voice message"
+                                        title="Record voice message"
+                                        class="flex items-center justify-center p-1.5 sm:p-2 text-white bg-brand-500 hover:bg-brand-600 rounded-full transition-colors focus-visible"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="absolute top-1/2 -translate-y-1/2 right-[2.2rem] sm:right-11">
                                     <button 
                                         id="toggleVoice" 
                                         aria-label="Toggle voice" 
-                                        class="p-2 text-secondary-400 hover:text-brand-500 bg-transparent hover:bg-brand-50 rounded-full transition-colors focus-visible"
+                                        class="flex items-center justify-center p-1.5 sm:p-2 text-secondary-400 hover:text-brand-500 bg-transparent hover:bg-brand-50 rounded-full transition-colors focus-visible"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 017.072 0m-9.9-2.828a9 9 0 0112.728 0" />
                                         </svg>
                                     </button>
                                 </div>
                                 <button 
                                     id="submitAnswer" 
-                                    class="absolute right-1.5 top-1/2 -translate-y-1/2 p-2.5 bg-brand-500 text-white rounded-full hover:bg-brand-600 active:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
+                                    class="absolute right-1 sm:right-1.5 top-1/2 -translate-y-1/2 p-1.5 sm:p-2.5 bg-brand-500 text-white rounded-full hover:bg-brand-600 active:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all flex items-center justify-center"
                                     aria-label="Send message"
                                     disabled
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
                                     </svg>
                                 </button>
                             </div>
                             
-                            <div class="flex items-center justify-between mt-2 px-2 text-xs text-secondary-500">
+                            <div class="flex items-center justify-between mt-1 sm:mt-2 px-2 text-xs text-secondary-500">
                                 <div id="inputHelp" class="flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    Tell me your destination, budget, and interests
+                                    <span class="text-[10px] sm:text-xs">Tell me your destination, budget, and interests</span>
                                 </div>
                                 
                                 <div id="typingIndicator" class="hidden">
-                                    <div class="flex items-center bg-brand-50 text-brand-500 rounded-full px-3 py-1">
-                                        <svg class="animate-spin h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24">
+                                    <div class="flex items-center bg-brand-50 text-brand-500 rounded-full px-2 sm:px-3 py-0.5 sm:py-1">
+                                        <svg class="animate-spin h-2 w-2 sm:h-3 sm:w-3 mr-1 sm:mr-2" fill="none" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        Planning your trip...
+                                        <span class="text-[10px] sm:text-xs">Planning your trip...</span>
                                     </div>
                                 </div>
                             </div>

@@ -1,0 +1,14 @@
+groq
+python-dotenv
+reportlab
+Pillow
+Flask
+flask-socketio
+SQLAlchemy
+Flask-SQLAlchemy
+pyttsx3
+python-unsplash
+requests
+SpeechRecognition
+pydub
+python-multipart

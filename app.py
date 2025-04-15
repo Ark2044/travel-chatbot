@@ -13,13 +13,16 @@ from models import db, Conversation, Message, TravelPreference
 import pyttsx3
 import threading
 import requests
-from urllib.parse import quote
+import tempfile
+import speech_recognition as sr
+from pydub import AudioSegment
 
 # Initialize Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///travel_planner.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit file uploads to 16MB
 
 # Initialize extensions
 socketio = SocketIO(app)
@@ -33,8 +36,11 @@ class VoiceHandler:
     def __init__(self):
         self.engine = None
         self.speaking_thread = None
-        self.voice_enabled = True
-        self.initialize_engine()
+        self.voice_enabled = False  # Default to disabled
+        try:
+            self.initialize_engine()
+        except Exception as e:
+            print(f"Voice functionality disabled: {str(e)}")
     
     def initialize_engine(self):
         try:
@@ -49,9 +55,12 @@ class VoiceHandler:
                 female_voice = next((voice for voice in voices if 'female' in voice.name.lower()), None)
                 if female_voice:
                     self.engine.setProperty('voice', female_voice.id)
+            # Only enable if we got this far without errors
+            self.voice_enabled = True
         except Exception as e:
             print(f"Error initializing voice engine: {str(e)}")
             self.voice_enabled = False
+            # Don't raise the exception, just disable the feature
     
     def speak(self, text):
         if not self.voice_enabled or not text.strip():
@@ -522,6 +531,103 @@ def get_conversation(conv_id):
         'preferences': preferences
     })
 
+@app.route('/process-voice', methods=['POST'])
+def process_voice():
+    """Process voice recording from the client and convert to text"""
+    try:
+        # Check if audio file was sent
+        if 'audio' not in request.files:
+            return jsonify({'success': False, 'error': 'No audio file provided'}), 400
+            
+        audio_file = request.files['audio']
+        question_index = request.form.get('question_index', None)
+        
+        # Validate file
+        if audio_file.filename == '':
+            return jsonify({'success': False, 'error': 'Empty audio file name'}), 400
+            
+        # Create a temporary file to store the audio
+        temp_dir = tempfile.mkdtemp()
+        temp_webm_path = os.path.join(temp_dir, "recording.webm")
+        temp_wav_path = os.path.join(temp_dir, "recording.wav")
+        
+        # Save the uploaded webm file
+        audio_file.save(temp_webm_path)
+        
+        # Convert webm to wav (required for many speech recognition engines)
+        try:
+            audio = AudioSegment.from_file(temp_webm_path)
+            audio.export(temp_wav_path, format="wav")
+        except Exception as e:
+            print(f"Error converting audio: {str(e)}")
+            return jsonify({
+                'success': False, 
+                'error': 'Could not convert audio format. Please try again.'
+            }), 500
+        
+        # Initialize speech recognition
+        recognizer = sr.Recognizer()
+        
+        # Process the audio file
+        with sr.AudioFile(temp_wav_path) as source:
+            # Adjust for ambient noise
+            recognizer.adjust_for_ambient_noise(source)
+            
+            # Record the audio
+            audio_data = recognizer.record(source)
+            
+            try:
+                # Use Google's speech recognition service
+                text = recognizer.recognize_google(audio_data)
+                
+                # Clean up temporary files
+                try:
+                    os.remove(temp_webm_path)
+                    os.remove(temp_wav_path)
+                    os.rmdir(temp_dir)
+                except:
+                    pass
+                
+                # Check if we should auto-submit based on context
+                auto_submit = False
+                
+                # Auto-submit simpler responses like budget, dates, etc.
+                if question_index is not None:
+                    try:
+                        question_index = int(question_index)
+                        # Check if the response is valid for the current question
+                        if question_index in VALIDATORS:
+                            is_valid, message = VALIDATORS[question_index](text)
+                            if is_valid:
+                                auto_submit = True
+                    except:
+                        pass
+                
+                return jsonify({
+                    'success': True,
+                    'text': text,
+                    'auto_submit': auto_submit
+                })
+                
+            except sr.UnknownValueError:
+                return jsonify({
+                    'success': False,
+                    'error': 'Could not understand audio. Please speak clearly and try again.'
+                }), 400
+                
+            except sr.RequestError as e:
+                return jsonify({
+                    'success': False,
+                    'error': f'Speech recognition service error: {str(e)}'
+                }), 500
+                
+    except Exception as e:
+        print(f"Error in process_voice: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'An unexpected error occurred. Please try again.'
+        }), 500
+
 def store_conversation(answers, messages):
     conversation = Conversation(destination=answers[0])
     db.session.add(conversation)
@@ -554,4 +660,5 @@ def store_conversation(answers, messages):
     return conversation
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    # Update to allow Werkzeug in production
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)

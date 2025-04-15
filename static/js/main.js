@@ -51,6 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const downloadPdf = document.getElementById("downloadPdf");
   const newTrip = document.getElementById("newTrip");
   const toggleVoice = document.getElementById("toggleVoice");
+  const recordVoice = document.getElementById("recordVoice");
 
   // Sidebar elements
   const sidebar = document.getElementById("sidebar");
@@ -83,6 +84,14 @@ document.addEventListener("DOMContentLoaded", function () {
   let lastTypingTime = 0;
   let isAiTyping = false;
   let isSidebarAnimating = false; // Track if sidebar is in the middle of animation
+
+  // Voice recording state variables
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let isRecording = false;
+  let recordingTimer = null;
+  let recordingSeconds = 0;
+  let recordingTimerDisplay = null;
 
   // ====== UI INTERACTION HANDLERS ======
 
@@ -296,6 +305,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Set up input field behaviors
   setupInput();
+  setupVoiceRecording();
 
   // Mobile UI handlers
   if (mobileSidebarToggle) {
@@ -1237,6 +1247,270 @@ document.addEventListener("DOMContentLoaded", function () {
       toggleVoice.classList.toggle("bg-primary-50", voiceEnabled);
     }
   });
+
+  /**
+   * Initialize voice recording functionality
+   */
+  function setupVoiceRecording() {
+    // Check if browser supports getUserMedia
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.warn("Browser doesn't support audio recording");
+      if (recordVoice) {
+        recordVoice.disabled = true;
+        recordVoice.classList.add("opacity-50", "cursor-not-allowed");
+        recordVoice.title = "Voice recording not supported in your browser";
+      }
+      return;
+    }
+
+    // Set up event listener for the record button
+    if (recordVoice) {
+      recordVoice.addEventListener("click", toggleRecording);
+    }
+  }
+
+  /**
+   * Toggle voice recording on/off
+   */
+  function toggleRecording() {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }
+
+  /**
+   * Start voice recording
+   */
+  function startRecording() {
+    if (isRecording) return;
+
+    // Request microphone access
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        // Show recording UI indicators
+        recordVoice.classList.add("recording", "animate-pulse", "bg-red-500");
+        recordVoice.classList.remove("bg-brand-500");
+        recordVoice.setAttribute("aria-label", "Stop recording");
+        recordVoice.setAttribute("title", "Stop recording");
+
+        // Create and display recording timer
+        createRecordingTimer();
+
+        // Reset state
+        audioChunks = [];
+        isRecording = true;
+
+        // Create media recorder
+        mediaRecorder = new MediaRecorder(stream);
+
+        // Collect audio chunks
+        mediaRecorder.addEventListener("dataavailable", (event) => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        });
+
+        // Handle recording stop
+        mediaRecorder.addEventListener("stop", () => {
+          // Convert chunks to blob
+          const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+          sendAudioToServer(audioBlob);
+
+          // Stop all tracks of the stream to release microphone
+          stream.getTracks().forEach((track) => track.stop());
+
+          // Reset UI
+          resetRecordingUI();
+        });
+
+        // Start recording
+        mediaRecorder.start();
+
+        // Auto-stop after 30 seconds for better UX
+        setTimeout(() => {
+          if (isRecording) {
+            stopRecording();
+          }
+        }, 30000);
+
+        // Start timer
+        startRecordingTimer();
+      })
+      .catch((error) => {
+        console.error("Error accessing microphone:", error);
+        showToast(
+          "Could not access microphone. Please check permissions.",
+          "error"
+        );
+        resetRecordingUI();
+      });
+  }
+
+  /**
+   * Stop voice recording
+   */
+  function stopRecording() {
+    if (!isRecording || !mediaRecorder) return;
+
+    isRecording = false;
+
+    // Stop the media recorder if it's active
+    if (mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
+
+    // Stop the timer
+    stopRecordingTimer();
+  }
+
+  /**
+   * Reset recording UI elements
+   */
+  function resetRecordingUI() {
+    recordVoice.classList.remove("recording", "animate-pulse", "bg-red-500");
+    recordVoice.classList.add("bg-brand-500");
+    recordVoice.setAttribute("aria-label", "Record voice message");
+    recordVoice.setAttribute("title", "Record voice message");
+
+    // Remove timer display
+    removeRecordingTimer();
+
+    isRecording = false;
+  }
+
+  /**
+   * Create recording timer display
+   */
+  function createRecordingTimer() {
+    // Create container for the timer if it doesn't exist
+    if (!recordingTimerDisplay) {
+      recordingTimerDisplay = document.createElement("div");
+      recordingTimerDisplay.className =
+        "absolute -top-10 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium shadow-md animate-fadeIn flex items-center";
+      recordingTimerDisplay.innerHTML = `
+        <div class="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
+        <span>0:00</span>
+      `;
+      recordVoice.parentNode.appendChild(recordingTimerDisplay);
+    }
+
+    // Reset timer
+    recordingSeconds = 0;
+    updateRecordingTimerDisplay();
+  }
+
+  /**
+   * Start recording timer
+   */
+  function startRecordingTimer() {
+    recordingTimer = setInterval(() => {
+      recordingSeconds++;
+      updateRecordingTimerDisplay();
+
+      // Visual feedback when approaching time limit
+      if (recordingSeconds >= 25) {
+        recordingTimerDisplay.classList.add("animate-pulse");
+      }
+    }, 1000);
+  }
+
+  /**
+   * Stop recording timer
+   */
+  function stopRecordingTimer() {
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+      recordingTimer = null;
+    }
+  }
+
+  /**
+   * Update the recording timer display
+   */
+  function updateRecordingTimerDisplay() {
+    if (!recordingTimerDisplay) return;
+
+    const minutes = Math.floor(recordingSeconds / 60);
+    const seconds = recordingSeconds % 60;
+    recordingTimerDisplay.querySelector(
+      "span"
+    ).textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  }
+
+  /**
+   * Remove recording timer display
+   */
+  function removeRecordingTimer() {
+    if (recordingTimerDisplay && recordingTimerDisplay.parentNode) {
+      recordingTimerDisplay.classList.add("opacity-0");
+      setTimeout(() => {
+        if (recordingTimerDisplay && recordingTimerDisplay.parentNode) {
+          recordingTimerDisplay.parentNode.removeChild(recordingTimerDisplay);
+          recordingTimerDisplay = null;
+        }
+      }, 300);
+    }
+  }
+
+  /**
+   * Send recorded audio to the server
+   */
+  function sendAudioToServer(audioBlob) {
+    // Show processing indicator
+    showToast("Processing your voice message...", "info");
+
+    // Create form data to send the audio file
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "recording.webm");
+
+    // Add conversation context if available
+    if (currentQuestionIndex !== null) {
+      formData.append("question_index", currentQuestionIndex);
+    }
+
+    // Send to server
+    fetch("/process-voice", {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            `Server responded with ${response.status}: ${response.statusText}`
+          );
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.success && data.text) {
+          // Set the transcribed text as input
+          userInput.value = data.text;
+          userInput.dispatchEvent(new Event("input"));
+
+          // Focus input
+          userInput.focus();
+
+          showToast("Voice processed successfully!", "success");
+
+          // Auto-submit if the setting is enabled and the text is valid
+          if (data.auto_submit) {
+            submitUserAnswer();
+          }
+        } else {
+          showToast(
+            data.error || "Could not process voice. Please try again.",
+            "error"
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Error sending audio:", error);
+        showToast("Error processing voice message. Please try again.", "error");
+      });
+  }
 
   /**
    * Show a toast notification
