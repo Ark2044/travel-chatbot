@@ -1,0 +1,11 @@
+groq
+python-dotenv
+reportlab
+Pillow
+Flask
+Flask-SocketIO
+SQLAlchemy
+Flask-SQLAlchemy
+pyttsx3
+python-unsplash
+requests

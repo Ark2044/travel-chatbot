@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TravelMind - Your AI-powered travel companion for personalized itineraries">
+    <meta name="theme-color" content="#0ea5e9">
+    <title>TravelMind | AI-Powered Travel Planner</title>
+    
+    <!-- Preload critical assets -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
+    <!-- Tailwind CSS Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        },
+                        secondary: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        accent: {
+                            light: '#fb923c',
+                            DEFAULT: '#f97316',
+                            dark: '#ea580c',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 5s ease-in-out infinite',
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.4s ease-out',
+                        'slide-down': 'slideDown 0.4s ease-out',
+                        'slide-left': 'slideLeft 0.4s ease-out',
+                        'slide-right': 'slideRight 0.4s ease-out',
+                        'scale': 'scale 0.2s ease-out',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(15px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        slideDown: {
+                            '0%': { transform: 'translateY(-15px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        slideLeft: {
+                            '0%': { transform: 'translateX(15px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' }
+                        },
+                        slideRight: {
+                            '0%': { transform: 'translateX(-15px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' }
+                        },
+                        scale: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        }
+                    },
+                    backgroundImage: {
+                        'hero-pattern': "url('data:image/svg+xml,%3Csvg width=\"30\" height=\"30\" viewBox=\"0 0 30 30\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cpath d=\"M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z\" fill=\"rgba(200,200,255,0.07)\"%3E%3C/path%3E%3C/svg%3E')",
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                    }
+                },
+            },
+        }
+    </script>
+    
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+    
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" defer></script>
+    
+    <!-- Custom styles -->
+    <style>
+        /* Smooth scrolling */
+        .smooth-scroll {
+            scroll-behavior: smooth;
+        }
+        
+        /* Custom scrollbar styles */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background-color: rgba(203, 213, 225, 0.2);
+            border-radius: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(14, 165, 233, 0.3);
+            border-radius: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(14, 165, 233, 0.5);
+        }
+        
+        /* Glass effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        /* Message bubble styles */
+        .user-bubble::after {
+            content: "";
+            position: absolute;
+            bottom: 8px;
+            right: -10px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid #0ea5e9;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+        
+        .assistant-bubble::after {
+            content: "";
+            position: absolute;
+            bottom: 8px;
+            left: -10px;
+            width: 0;
+            height: 0;
+            border-right: 10px solid white;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+        
+        /* Focus state for accessibility */
+        .focus-visible:focus-visible {
+            outline: 2px solid #0ea5e9;
+            outline-offset: 2px;
+        }
+        
+        /* Text gradient */
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #0ea5e9, #2563eb);
+        }
+        
+        /* Animated dots */
+        .typing-dot {
+            animation: typing-dot 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing-dot {
+            0%, 80%, 100% { transform: scale(0.5); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Animations for messages */
+        .message-appear {
+            animation: message-appear 0.3s ease forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        
+        @keyframes message-appear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Image hover effects */
+        .img-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .img-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Mobile sidebar animation */
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+        
+        .animate-slideInLeft {
+            animation: slideInLeft 0.3s ease-out forwards;
+        }
+        
+        /* Fade animations */
+        .opacity-0 {
+            opacity: 0;
+        }
+        
+        .opacity-100 {
+            opacity: 1;
+        }
+        
+        /* Custom transitions */
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
+        
+        .transition-opacity {
+            transition-property: opacity;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
+        
+        .transition-transform {
+            transition-property: transform;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .animate-slideInRight {
+            animation: slideInRight 0.3s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fadeInUp {
+            animation: fadeInUp 0.3s ease-out forwards;
+        }
+
+        /* Responsive layout improvements */
+        @media (max-width: 640px) {
+            .user-bubble::after, .assistant-bubble::after {
+                display: none; /* Hide chat bubble tails on small screens */
+            }
+            
+            .glass {
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+            }
+            
+            #actionButtons {
+                bottom: 80px !important; /* Move action buttons above input on mobile */
+                right: 1rem;
+                z-index: 35 !important;
+            }
+            
+            #actionButtons button {
+                padding: 0.75rem !important;
+                min-width: 48px !important;
+                height: 48px !important;
+                justify-content: center;
+                border-radius: 50% !important;
+            }
+            
+            #actionButtons button span {
+                display: none; /* Hide button text on small screens */
+            }
+            
+            /* Improve mobile spacing */
+            .message-appear {
+                margin-bottom: 0.75rem;
+            }
+            
+            /* Make buttons more tappable */
+            button, a {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Ensure input area is always visible */
+            .p-3 {
+                padding: 0.75rem !important;
+            }
+            
+            /* Fix mobile grid for better space usage */
+            .grid-cols-1 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Fix mobile image panel */
+        #imagesPanel.fixed {
+            height: 100% !important;
+            width: 100% !important;
+            z-index: 40 !important;
+            animation: slideInRight 0.3s ease-out forwards;
+            left: 0 !important;
+            top: 0 !important;
+            position: fixed !important;
+        }
+
+        /* Optimize content for different screen sizes */
+        @media (max-width: 480px) {
+            .glass {
+                padding: 0.75rem;
+            }
+            
+            #chatMessages {
+                padding: 0.75rem;
+            }
+            
+            .text-gradient {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 767px) {
+            /* Fix mobile sidebar issues */
+            #sidebar {
+                width: 85% !important; /* Override any inline styles */
+                max-width: 320px;
+                height: 100vh !important;
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-out !important;
+            }
+            
+            #sidebar.active {
+                transform: translateX(0) !important;
+            }
+            
+            /* Fix content overflow on mobile */
+            body.overflow-hidden {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+            
+            /* Fix mobile header sticking */
+            header.sticky {
+                position: sticky;
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                z-index: 30;
+            }
+            
+            /* Improve chat bubbles on small screens */
+            .max-w-85 {
+                max-width: 82% !important;
+            }
+            
+            /* Fix floating action buttons */
+            #actionButtons {
+                bottom: 80px; /* Adjust to avoid overlapping with input area */
+                z-index: 35;
+            }
+            
+            /* Ensure consistent appearance of buttons */
+            button {
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+            
+            /* Better touch feedback */
+            button:active {
+                transform: scale(0.97);
+            }
+        }
+
+        /* Fix webkit backdrop filter issue on some mobile browsers */
+        @supports not (backdrop-filter: blur(12px)) {
+            .glass {
+                background: rgba(255, 255, 255, 0.95);
+            }
+        }
+
+        /* Fix iOS height calculation issues */
+        .h-screen, .h-full {
+            height: 100vh;
+            height: -webkit-fill-available;
+        }
+
+        /* Fix image panel on mobile */
+        @media (max-width: 767px) {
+            #imagesPanel.fixed {
+                width: 100% !important;
+                height: 100% !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                z-index: 40 !important;
+            }
+            
+            /* Ensure click events work correctly on mobile */
+            .cursor-pointer {
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+        }
+        
+        /* Fix for iOS Safari bottom toolbar overlap */
+        @supports (-webkit-touch-callout: none) {
+            .h-screen {
+                height: -webkit-fill-available;
+            }
+            
+            #actionButtons {
+                bottom: calc(80px + env(safe-area-inset-bottom));
+            }
+            
+            .p-3.md\:p-4.glass.shadow-lg {
+                padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+            }
+        }
+        
+        /* Media query for smooth transition between mobile and desktop */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            #sidebar {
+                transition: width 0.3s ease-out, opacity 0.3s ease-out;
+            }
+            
+            #imagesPanel {
+                transition: width 0.3s ease-out, opacity 0.3s ease-out;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans text-secondary-800 bg-gradient-to-br from-blue-50 to-sky-50 bg-fixed h-screen overflow-hidden">
+    <!-- Top decoration pattern -->
+    <div class="pointer-events-none absolute inset-0 bg-hero-pattern opacity-5 bg-repeat z-0"></div>
+    
+    <!-- Main app container -->
+    <div class="h-screen relative z-10 flex flex-col lg:flex-row max-w-8xl mx-auto">
+        <!-- Mobile Header -->
+        <header class="lg:hidden sticky top-0 z-40 glass px-4 py-3 flex items-center justify-between shadow-sm">
+            <button id="mobileSidebarToggle" aria-label="Menu" class="p-2 text-secondary-600 hover:text-brand-600 rounded-full bg-white/50 hover:bg-white shadow-sm focus-visible">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+            
+            <div class="flex items-center">
+                <div aria-hidden="true" class="mr-2 text-3xl animate-float">✈️</div>
+                <h1 class="text-gradient font-display font-bold text-xl">TravelMind</h1>
+            </div>
+            
+            <button id="mobileImageToggle" aria-label="View gallery" class="p-2 text-secondary-600 hover:text-brand-600 rounded-full bg-white/50 hover:bg-white shadow-sm focus-visible">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </button>
+        </header>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-30 w-full lg:w-80 max-w-sm transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 flex flex-col bg-white shadow-xl lg:shadow-md lg:border-r lg:border-secondary-100">
+            <!-- Sidebar header -->
+            <div class="p-4 flex items-center justify-between bg-brand-500 text-white">
+                <div class="flex items-center">
+                    <div aria-hidden="true" class="mr-2 text-3xl">✈️</div>
+                    <h1 class="font-display font-bold text-2xl">TravelMind</h1>
+                </div>
+                <button id="closeSidebar" aria-label="Close menu" class="lg:hidden p-2 rounded-full hover:bg-white/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Profile/User info -->
+            <div class="px-4 py-3 border-b border-secondary-100">
+                <div class="flex items-center space-x-3">
+                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-brand-400 to-blue-500 flex items-center justify-center text-white font-semibold shadow-inner">
+                        AI
+                    </div>
+                    <div>
+                        <h2 class="font-medium">AI Travel Assistant</h2>
+                        <p class="text-xs text-secondary-500">Personalized travel planning</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Saved trips list -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <div class="p-4">
+                    <h3 class="font-display font-semibold text-sm text-secondary-500 uppercase tracking-wider mb-3">Your Trips</h3>
+                    <div id="conversationList" class="space-y-2">
+                        <!-- Empty state -->
+                        <div class="text-center py-10 px-4">
+                            <div class="w-16 h-16 bg-secondary-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-secondary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                </svg>
+                            </div>
+                            <h3 class="font-medium text-secondary-900 mb-1">No saved trips yet</h3>
+                            <p class="text-sm text-secondary-500">Your trip plans will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar footer -->
+            <div class="p-4 border-t border-secondary-100 bg-secondary-50">
+                <button id="newConversationBtn" class="w-full flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 transition-colors text-white py-3 px-4 rounded-lg font-medium shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Plan New Trip
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main content area -->
+        <main class="flex-1 flex flex-col h-[calc(100vh-56px)] lg:h-screen overflow-hidden">
+            <!-- Desktop Header -->
+            <header class="hidden lg:flex items-center justify-between p-4 glass shadow-sm">
+                <div>
+                    <h1 class="text-xl font-display font-bold text-gradient">Find Your Perfect Adventure</h1>
+                </div>
+                
+                <div class="flex items-center">
+                    <div class="text-sm text-secondary-500">Built with AI-powered recommendations</div>
+                </div>
+            </header>
+
+            <!-- Chat container with image panel -->
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Chat area -->
+                <div class="flex-1 flex flex-col min-w-0">
+                    <!-- Messages area -->
+                    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar scroll-smooth">
+                        <!-- Welcome message -->
+                        <div class="message-appear max-w-2xl mx-auto">
+                            <div class="glass rounded-2xl p-5 shadow-lg">
+                                <div class="flex flex-col md:flex-row items-start gap-4 mb-4">
+                                    <div class="w-16 h-16 flex-shrink-0 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 p-0.5">
+                                        <div class="w-full h-full flex items-center justify-center bg-white rounded-xl">
+                                            <span class="text-3xl">✈️</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-2xl font-display font-bold text-gradient mb-1">Welcome to TravelMind</h2>
+                                        <p class="text-secondary-600">Your AI-powered travel planner that creates personalized itineraries</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <p class="text-secondary-700">Tell me about your dream destination, and I'll craft the perfect trip tailored to your preferences, budget, and interests.</p>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 py-2">
+                                        <div class="bg-white rounded-xl p-3 shadow-sm border border-secondary-100">
+                                            <div class="flex items-center text-brand-500 mb-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                                </svg>
+                                                <h3 class="font-medium">Personalized</h3>
+                                            </div>
+                                            <p class="text-sm text-secondary-600">Tailored recommendations based on your unique preferences</p>
+                                        </div>
+                                        
+                                        <div class="bg-white rounded-xl p-3 shadow-sm border border-secondary-100">
+                                            <div class="flex items-center text-brand-500 mb-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <h3 class="font-medium">Quick</h3>
+                                            </div>
+                                            <p class="text-sm text-secondary-600">Get detailed plans in seconds, not hours</p>
+                                        </div>
+                                        
+                                        <div class="bg-white rounded-xl p-3 shadow-sm border border-secondary-100">
+                                            <div class="flex items-center text-brand-500 mb-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                                </svg>
+                                                <h3 class="font-medium">Exportable</h3>
+                                            </div>
+                                            <p class="text-sm text-secondary-600">Download your itinerary as a PDF to access offline</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <p class="text-secondary-600">Ready to start planning? Just tell me where you want to go!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input area -->
+                    <div class="p-3 md:p-4 glass shadow-lg">
+                        <div class="max-w-3xl mx-auto">
+                            <div class="relative">
+                                <label for="userInput" class="sr-only">Type your message</label>
+                                <input 
+                                    type="text" 
+                                    id="userInput" 
+                                    placeholder="Where would you like to travel?" 
+                                    class="w-full pl-5 pr-14 py-4 bg-white border border-secondary-200 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-300 placeholder-secondary-400 transition-all"
+                                    aria-describedby="inputHelp"
+                                >
+                                <div class="absolute top-1/2 -translate-y-1/2 right-14">
+                                    <button 
+                                        id="toggleVoice" 
+                                        aria-label="Toggle voice" 
+                                        class="p-2 text-secondary-400 hover:text-brand-500 bg-transparent hover:bg-brand-50 rounded-full transition-colors focus-visible"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <button 
+                                    id="submitAnswer" 
+                                    class="absolute right-1.5 top-1/2 -translate-y-1/2 p-2.5 bg-brand-500 text-white rounded-full hover:bg-brand-600 active:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
+                                    aria-label="Send message"
+                                    disabled
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <div class="flex items-center justify-between mt-2 px-2 text-xs text-secondary-500">
+                                <div id="inputHelp" class="flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Tell me your destination, budget, and interests
+                                </div>
+                                
+                                <div id="typingIndicator" class="hidden">
+                                    <div class="flex items-center bg-brand-50 text-brand-500 rounded-full px-3 py-1">
+                                        <svg class="animate-spin h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Planning your trip...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inspiration panel (replaces images panel) -->
+                <aside id="imagesPanel" class="hidden lg:block w-96 flex-shrink-0 bg-white border-l border-secondary-100 flex flex-col transition-all duration-300 ease-in-out">
+                    <div class="p-4 border-b border-secondary-100 flex justify-between items-center bg-brand-500 text-white">
+                        <h2 class="font-display font-semibold text-lg">Travel Inspiration</h2>
+                        <button id="closeImagesPanel" aria-label="Close inspiration panel" class="lg:hidden p-2 hover:bg-white/10 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div id="imagesContainer" class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                        <!-- Empty state -->
+                        <div class="h-full flex flex-col items-center justify-center text-center">
+                            <div class="w-24 h-24 bg-secondary-50 rounded-full flex items-center justify-center mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-secondary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                            </div>
+                            <h3 class="font-medium text-secondary-900 mb-1">Discover amazing destinations</h3>
+                            <p class="text-sm text-secondary-500 max-w-xs">Tell me where you'd like to go and I'll show you inspiring images and travel ideas</p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+
+        <!-- Floating Action Buttons -->
+        <div id="actionButtons" class="fixed bottom-6 right-6 z-30 flex flex-col gap-3">
+            <button id="downloadPdf" aria-label="Download itinerary as PDF" class="hidden items-center gap-2 py-3 px-5 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Itinerary
+            </button>
+            
+            <button id="newTrip" aria-label="Start planning a new trip" class="hidden items-center gap-2 py-3 px-5 bg-brand-500 hover:bg-brand-600 text-white rounded-full shadow-lg transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Plan New Trip
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loading" class="fixed inset-0 bg-white/80 backdrop-blur-md flex items-center justify-center z-50 hidden" role="alert" aria-busy="true" aria-live="assertive">
+        <div class="glass p-8 rounded-2xl shadow-xl max-w-md w-full border border-secondary-100 animate-scale">
+            <div class="flex flex-col items-center text-center">
+                <div class="relative mb-6">
+                    <div class="w-20 h-20 bg-gradient-to-r from-brand-400 to-blue-500 rounded-full animate-pulse flex items-center justify-center">
+                        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                            <span class="text-3xl">✈️</span>
+                        </div>
+                    </div>
+                    <div class="absolute -right-2 -bottom-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md border border-secondary-100">
+                        <div class="animate-spin h-5 w-5 border-2 border-secondary-200 border-t-brand-500 rounded-full"></div>
+                    </div>
+                </div>
+                
+                <h2 class="text-xl font-display font-bold text-gradient mb-2">Crafting Your Perfect Journey</h2>
+                <p class="text-secondary-600">Our AI is personalizing your travel plan based on your preferences</p>
+                
+                <div class="mt-6 w-full bg-secondary-100 h-2 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-brand-400 to-blue-500 animate-pulse w-3/4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backdrop for mobile sidebar -->
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-secondary-900/50 backdrop-blur-sm z-20 lg:hidden hidden opacity-0 transition-opacity"></div>
+    
+    <!-- Image fullscreen viewer -->
+    <div id="imageViewer" class="fixed inset-0 bg-secondary-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="imageCaption">
+        <button id="closeImageViewer" class="absolute top-4 right-4 text-white p-2 rounded-full bg-secondary-800/50 hover:bg-secondary-800/70" aria-label="Close image viewer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        
+        <div class="relative max-w-5xl w-full h-[80vh] flex items-center justify-center">
+            <img id="fullscreenImage" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" src="" alt="Fullscreen view">
+        </div>
+        
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl">
+            <p id="imageCaption" class="text-center text-white bg-secondary-900/70 backdrop-blur-sm py-3 px-6 rounded-xl font-medium"></p>
+        </div>
+    </div>
+    
+    <!-- Toast notifications container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2" role="status" aria-live="polite"></div>
+
+    <!-- Data and scripts -->
+    <script id="questions-data" type="application/json">
+        {{ questions|tojson|safe }}
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Fix mobile sidebar issue -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const mobileSidebarToggle = document.getElementById("mobileSidebarToggle");
+            const closeSidebar = document.getElementById("closeSidebar");
+            const sidebar = document.getElementById("sidebar");
+            const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+            
+            // Fix for mobile sidebar
+            function toggleMobileSidebar() {
+                sidebar.classList.toggle("-translate-x-full");
+                sidebarBackdrop.classList.toggle("hidden");
+                sidebarBackdrop.classList.toggle("opacity-0");
+                sidebarBackdrop.classList.toggle("opacity-100");
+                
+                if (!sidebar.classList.contains("-translate-x-full")) {
+                    // Opening sidebar
+                    document.body.classList.add("overflow-hidden");
+                    sidebar.style.backdropFilter = "none";
+                    sidebar.style.webkitBackdropFilter = "none";
+                } else {
+                    // Closing sidebar
+                    document.body.classList.remove("overflow-hidden");
+                }
+            }
+            
+            // Event listeners for mobile sidebar
+            if (mobileSidebarToggle) {
+                mobileSidebarToggle.addEventListener("click", toggleMobileSidebar);
+            }
+            
+            if (closeSidebar) {
+                closeSidebar.addEventListener("click", toggleMobileSidebar);
+            }
+            
+            if (sidebarBackdrop) {
+                sidebarBackdrop.addEventListener("click", toggleMobileSidebar);
+            }
+        });
+    </script>
+</body>
+</html>
