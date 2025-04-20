@@ -132,6 +132,7 @@ Recommended transportation options to and around the destination.
 
 ACCOMMODATION
 Suggested places to stay based on preferences and budget.
+Estimated cost value for each place
 
 DAY-BY-DAY ITINERARY
 For each day include:
@@ -143,6 +144,7 @@ DINING RECOMMENDATIONS
 Must-try local restaurants
 Popular local dishes
 Dining experiences based on preferences
+Estimated cost value for each place
 
 LOCAL EXPERIENCES
 Cultural activities
@@ -271,7 +273,9 @@ VALIDATORS = {
 }
 
 # Unsplash API configuration
-UNSPLASH_ACCESS_KEY = "nTfEy6niAwkF5YUU9CxBR2cpH49QX4UDJvsE3Hj_6z0"
+UNSPLASH_ACCESS_KEY = os.getenv("UNSPLASH_ACCESS_KEY")
+if not UNSPLASH_ACCESS_KEY:
+    raise ValueError("Missing UNSPLASH_ACCESS_KEY in your .env file!")
 
 def search_images(query, per_page=6):
     """Search for images using Unsplash API with specific categories"""
